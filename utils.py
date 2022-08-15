@@ -6,23 +6,34 @@ class Buffer:
         self.buffer = []
         self.buffer_size = buffer_size
 
-    def free_slot(self):
-        idx = random.randrange(self.buffer_size)
-        self.buffer.pop(idx)
+    def free_slot(self, n=1):
+        # idx = random.randrange(self.buffer_size)
+        # print(n)
+        for i in range(n):
+            self.buffer.pop(0)
 
     def insert(self, data):
+        # delete_prob = 0
+        # if len(self.buffer) / self.buffer_size < 0.5:
+        #     delete_prob = 0.5
+        used_space = len(self.buffer) / self.buffer_size
+        if random.uniform(0, 1) < used_space:
+            if used_space > 0.95:
+                self.free_slot(n=250)
+            else:
+                self.free_slot()
         if len(self.buffer) < self.buffer_size:
             self.buffer.append(data)
-            return 1
+            return self.get_status()
         else:
             # msg = 'buffer full!'
             # c.send(msg.encode())
-            self.free_slot()
+            self.free_slot(n=500)
             self.buffer.append(data)
-            return 2
+            return 1
 
-    def status(self):
-        return len(self.buffer)
+    def get_status(self):
+        return (len(self.buffer) / self.buffer_size) > 0.95
 
 
 class Pkt:

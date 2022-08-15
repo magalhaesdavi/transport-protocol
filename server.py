@@ -3,10 +3,11 @@ import random
 import re
 import utils
 
-PKT_LOSS_PROBABILITY = 0
+PKT_LOSS_PROBABILITY = 0.006
+BUFFER_SIZE = 1500
 
 if __name__ == "__main__":
-    buffer = utils.Buffer(100)
+    buffer = utils.Buffer(BUFFER_SIZE)
     s = socket.socket()
     host = socket.gethostname()
     port = 3031
@@ -38,30 +39,28 @@ if __name__ == "__main__":
             if loss_roll > PKT_LOSS_PROBABILITY:
                 if last_acked < 29:
                     if seq_num != last_acked + 1:
-                        msg = "ACK" + str(last_acked)
+                        status = buffer.get_status()
+                        msg = "ACK" + str(last_acked) + "BF" + str(int(status))
                         # print(msg)
                         c.send(msg.encode())
                     elif seq_num == last_acked + 1:
                         last_acked = seq_num
                         res = buffer.insert(pkt)
-                        msg = "ACK" + str(seq_num)
+                        msg = "ACK" + str(seq_num) + "BF" + str(int(res))
                         # print(msg)
                         c.send(msg.encode())
                 else:
                     if seq_num != 10:
-                        msg = "ACK" + str(last_acked)
+                        status = buffer.get_status()
+                        msg = "ACK" + str(last_acked) + "BF" + str(int(status))
                         # print(msg)
                         c.send(msg.encode())
                     elif seq_num == 10:
                         last_acked = seq_num
                         res = buffer.insert(pkt)
-                        msg = "ACK" + str(seq_num)
+                        msg = "ACK" + str(seq_num) + "BF" + str(int(res))
                         # print(msg)
                         c.send(msg.encode())
-
-                    # if res == 2:
-                    #     msg = "buffer full!"
-                    #     s.send(msg.encode())
 
             else:
                 pass
