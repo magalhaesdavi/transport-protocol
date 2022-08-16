@@ -6,8 +6,9 @@ import threading
 import random
 import string
 import re
-from socket import error as SocketError
+from socket import error as SocketError, timeout
 import errno
+import argparse
 
 from more_itertools import first
 import utils
@@ -18,7 +19,6 @@ signal(SIGPIPE, SIG_DFL)
 
 def check_timeout(timers):
     global timedout, timedout_id
-    # while not done:
     for key in list(timers):
         if time.time() - timers[key] > 1:
             return int(key)
@@ -26,42 +26,51 @@ def check_timeout(timers):
 
 
 def sender(path):
-    # test_file = open(path, 'r')
-    # lines = test_file.readlines()
-    # print(lines[0])
-    # lines = []
-    # with open(r"test.txt", 'r') as fp:
-    #     for count, line in enumerate(fp):
-    #         lines.append(line)
-    # print(lines[0])
+    test_file = open(path, 'r')
+    lines = test_file.readlines()
     receiver_thread = threading.Thread(name='daemon', target=receiver)
     receiver_thread.daemon = True
     receiver_thread.start()
 
-    global last_acked, done, rtt, upper_bound, lower_bound, first_run, pkt_timer
-    seq_num = utils.SequeceNumber()
+    global last_acked, done, rtt, upper_bound, lower_bound, first_run, pkt_timer, timeouts, pending_acks, pause
     i = 0
-    while lower_bound < 20480:
+    while lower_bound < len(lines):  # 20480
         # print(lower_bound)
         if buffer_full:
-            time.sleep(1)
+            time.sleep(0.5)
         if first_run:
             pkt_timer = time.time()
             first_run = False
+        
+        if not (i % 500):
+            timeouts = 0
 
-        if time.time() - pkt_timer > 0.8:
+        if time.time() - pkt_timer > 0.27:
             i = lower_bound
             pkt_timer = time.time()
+            timeouts += 1
+            # print("timeout!")
 
-        if i < upper_bound and i < 20480:
+        if i < upper_bound and i < len(lines) and not pause:
             # print('i: ' + str(i))
             idx = (i % 20) + 10
-            pkt = ''.join(random.choices(string.ascii_uppercase + string.digits, k=PKT_SIZE))
-            pkt = '[' + str(idx) + '] ' + pkt
+            # pkt = ''.join(random.choices(string.ascii_uppercase + string.digits, k=PKT_SIZE))
+            pkt = lines[i]
+            pkt = '[' + str(idx) + ']' + pkt
             # print(pkt)
             pkt = pkt.encode()
             s.send(pkt)
+            # pending_acks += 1
             i += 1
+
+        if timeouts > 20:
+            time.sleep(1)
+            timeouts = 0
+            print("Too many timeouts!")
+        # if pending_acks > 9:
+        #     pause = True
+        # else:
+        #     pause = False
     
     done_lock.acquire()
     done = True
@@ -72,11 +81,11 @@ def sender(path):
 
 
 def receiver():
-    global last_acked, timedout, timedout_id, rtt, upper_bound, lower_bound, pkt_timer, buffer_full
+    global last_acked, timedout, timedout_id, rtt, upper_bound, lower_bound, pkt_timer, buffer_full, pending_acks, pause
     while not done:
         pkt = s.recv(8)
         msg = pkt.decode()
-        # print(msg)
+        print(msg)
         lock.acquire()
         msg_seq_num = int(re.findall(r'\d+', msg)[0])
         buffer_full = int(re.findall(r'\d+', msg)[1])
@@ -87,37 +96,49 @@ def receiver():
             # print('la: ' + str(last_acked))
             lower_bound += 1
             upper_bound += 1
-            print('lower bound: ' + str(lower_bound))
+            print('Lower bound: ' + str(lower_bound))
+            # print('upper bound: ' + str(upper_bound))
             pkt_timer = time.time()
+            pending_acks -= 1
+            # print(pending_acks)
+            # if pending_acks <= 9:
+            #     pause = False
         lock.release()
-        # time.sleep(0)
 
 
-WINDOW_SIZE = 10
-PKT_SIZE = 512
+if __name__ == "__main__":
+    WINDOW_SIZE = 10
+    PKT_SIZE = 512
 
-# if __name__ == "__main__":
-s = socket.socket()
-host = socket.gethostname()
-port = 3031
-s.connect((host, port))
-print('Connected to', host)
+    parser = argparse.ArgumentParser(description='Client application that will send data from file to a given port.')
+    parser.add_argument("-p", "--port", help="Connection port.", default=3031)
+    parser.add_argument("-f", "--file_path", help="File path.", default="text.txt")
+    parser.add_argument("-i", "--iterations", help="Number of iterations.", default=10)
+    args = parser.parse_args()
 
-done = False
-timers = {}
-last_acked = 9
-upper_bound = 10
-lower_bound = 0
-rtt = 0
-pkt_timer = -1
-first_run = True
-buffer_full = False
+    s = socket.socket()
+    host = socket.gethostname()
+    port = int(args.port)
+    s.connect((host, port))
+    print('Connected to', host)
 
-lock = threading.Lock()
-done_lock = threading.Lock()
+    done = False
+    last_acked = 9
+    upper_bound = 10
+    lower_bound = 0
+    rtt = 0
+    pkt_timer = -1
+    first_run = True
+    buffer_full = False
+    pending_acks = 0
+    timeouts = 0
+    pause = False
 
-path = 'test.txt'
-sender(path)
+    lock = threading.Lock()
+    done_lock = threading.Lock()
+
+    path = args.file_path
+    sender(path)
 
 # lock = threading.Lock()
 # lock2 = threading.Lock()

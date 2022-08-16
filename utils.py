@@ -17,23 +17,24 @@ class Buffer:
         # if len(self.buffer) / self.buffer_size < 0.5:
         #     delete_prob = 0.5
         used_space = len(self.buffer) / self.buffer_size
-        if random.uniform(0, 1) < used_space:
-            if used_space > 0.95:
-                self.free_slot(n=250)
-            else:
-                self.free_slot()
+        if used_space > 0.9:
+            if random.uniform(0, 1) < used_space / 1.5:
+                if used_space > 0.95:
+                    self.free_slot(n=250)
+                else:
+                    self.free_slot(n=125)
         if len(self.buffer) < self.buffer_size:
             self.buffer.append(data)
             return self.get_status()
         else:
             # msg = 'buffer full!'
             # c.send(msg.encode())
-            self.free_slot(n=500)
+            self.free_slot(n=250)
             self.buffer.append(data)
             return 1
 
     def get_status(self):
-        return (len(self.buffer) / self.buffer_size) > 0.95
+        return (len(self.buffer) / self.buffer_size) > 0.9
 
 
 class Pkt:
@@ -54,22 +55,3 @@ class Pkt:
     def set_seq_num(self, seq_num):
         self.seq_num = seq_num
         return 1
-
-
-class SequeceNumber:
-    def __init__(self):
-        self.list = list(range(10, 31))
-        self.next = self.list[0]
-        self.counter = 0
-
-    def get_next(self):
-        temp = self.next
-        self.update()
-        return temp
-
-    def update(self):
-        if self.counter + 1 < len(self.list):
-            self.counter += 1
-        else:
-            self.counter = 0
-        self.next = self.list[self.counter]
