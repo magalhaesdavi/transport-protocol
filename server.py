@@ -16,6 +16,7 @@ if __name__ == "__main__":
 
     BUFFER_SIZE = int(args.buffer_size)
     PKT_LOSS_PROBABILITY = float(args.loss_probability)
+    # print(PKT_LOSS_PROBABILITY)
     buffer = utils.Buffer(BUFFER_SIZE)
     s = socket.socket()
     host = socket.gethostname()
@@ -42,7 +43,9 @@ if __name__ == "__main__":
 
             pkt = c.recv(517)
             msg = pkt.decode()
-            print(msg)
+            if msg == 'FIN':
+                exit()
+            # print(msg)
             nums = re.findall(r"\[(\d+)\]", msg)
             if nums:
                 seq_num = int(nums[0])
@@ -72,6 +75,9 @@ if __name__ == "__main__":
                             msg = "ACK" + str(seq_num) + "BF" + str(int(res))
                             # print(msg)
                             c.send(msg.encode())
+                else:
+                    # print("loss")
+                    pass
 
             else:
                 pass
