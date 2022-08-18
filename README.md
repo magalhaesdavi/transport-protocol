@@ -16,7 +16,7 @@ Implemented algorithms:
 
 ## Experimentos
 
-Para avaliar a performance do protocolo e observar seu comportamento, realizamos 10 execuções sem perdas de pacotes e 10 execuções simulando perdas aleatórias. Os resultados obtidos são apresentados nos gráficos em ```/results```.
+Para avaliar a performance do protocolo e observar seu comportamento, realizamos 10 execuções sem perdas de pacotes e 10 execuções simulando perdas aleatórias. Os resultados obtidos são apresentados nos gráficos em ```/results```. Nos parâmetros de linha de comando utilizamos uma probabilidade de perda de 5% (nos testes com perda) e tamanho de buffer de 1500. Já como parâmetro interno, usamos tempo de timeout de 0.52 segundo. Chegamos a esse valor tendo como base o RTT médio e o RTT máximo.
 
 ## Como rodar
 
