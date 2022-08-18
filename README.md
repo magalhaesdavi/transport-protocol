@@ -14,6 +14,10 @@ Implemented algorithms:
 - Controle de congestionamento (inspirado no RED);
 - Fast Retransmit;
 
+## Experimentos
+
+Para avaliar a performance do protocolo e observar seu comportamento, realizamos 10 execuções sem perdas de pacotes e 10 execuções simulando perdas aleatórias. Os resultados obtidos são apresentados nos gráficos em ```/results```.
+
 ## Como rodar
 
 Para rodar o código basta rodar primeiro ```server.py```, da seguinte forma:
