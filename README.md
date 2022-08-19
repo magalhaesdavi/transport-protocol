@@ -1,6 +1,6 @@
 # Protocolo de comunicação confiável baseado no UDP
 
-## Description
+## Descrição
 
 Nesse projeto desenvolvemos um protocolo de comunicação confiável baseado no UDP. Para isso adicionamos algumas funcionalidades extras, algumas até estão presentes no TCP.
 
